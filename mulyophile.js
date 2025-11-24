@@ -1,4 +1,166 @@
-    window.addEventListener('load', () => {
+  (function() {
+            let progressBar = document.querySelector('.loader-progress-bar');
+            let progress = 0;
+            let checks = {
+                windowLoaded: false,
+                domReady: false,
+                tailwindApplied: false,
+                firebaseLoaded: false,
+                lucideLoaded: false,
+                mainContentRendered: false
+            };
+            
+            // Update progress bar
+            function updateProgress(percentage) {
+                if (progressBar) {
+                    progressBar.style.width = percentage + '%';
+                    progressBar.style.animation = 'none'; // Stop auto animation
+                }
+            }
+            
+            // Check if all conditions are met
+            function checkAllReady() {
+                let totalChecks = Object.keys(checks).length;
+                let completedChecks = Object.values(checks).filter(v => v).length;
+                let percentage = Math.round((completedChecks / totalChecks) * 100);
+                
+                updateProgress(percentage);
+                
+                // Only show content when ALL checks pass
+                if (completedChecks === totalChecks) {
+                    showContent();
+                }
+            }
+            
+            // Show content with smooth transition
+            function showContent() {
+                const loader = document.getElementById('app-loader');
+                const mainContent = document.getElementById('main-app-content');
+                
+                if (loader && mainContent && !loader.classList.contains('loaded')) {
+                    // Final progress
+                    updateProgress(100);
+                    
+                    // Small delay for smooth UX
+                    setTimeout(function() {
+                        // Fade out loader
+                        loader.classList.add('loaded');
+                        
+                        // Fade in content
+                        mainContent.classList.add('loaded');
+                        
+                        // Initialize Lucide icons
+                        if (typeof lucide !== 'undefined') {
+                            lucide.createIcons();
+                        }
+                        
+                        console.log('✅ App loaded successfully - All checks passed!');
+                    }, 200);
+                }
+            }
+            
+            // Check 1: DOM Ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    checks.domReady = true;
+                    updateProgress(15);
+                    checkAllReady();
+                });
+            } else {
+                checks.domReady = true;
+                updateProgress(15);
+            }
+            
+            // Check 2: Window Loaded (all resources)
+            window.addEventListener('load', function() {
+                checks.windowLoaded = true;
+                updateProgress(30);
+                checkAllReady();
+            });
+            
+            // Check 3: Tailwind CSS Applied
+            function checkTailwind() {
+                const body = document.body;
+                const computedStyle = window.getComputedStyle(body);
+                const bgColor = computedStyle.backgroundColor;
+                
+                // Check if background color is applied (not default white)
+                if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'rgb(255, 255, 255)') {
+                    checks.tailwindApplied = true;
+                    updateProgress(50);
+                    checkAllReady();
+                    return true;
+                }
+                return false;
+            }
+            
+            // Check 4: Firebase Loaded
+            function checkFirebase() {
+                if (typeof firebase !== 'undefined') {
+                    checks.firebaseLoaded = true;
+                    updateProgress(65);
+                    checkAllReady();
+                    return true;
+                }
+                return false;
+            }
+            
+            // Check 5: Lucide Loaded
+            function checkLucide() {
+                if (typeof lucide !== 'undefined') {
+                    checks.lucideLoaded = true;
+                    updateProgress(80);
+                    checkAllReady();
+                    return true;
+                }
+                return false;
+            }
+            
+            // Check 6: Main Content Rendered
+            function checkMainContent() {
+                const sidebar = document.getElementById('floating-sidebar');
+                const mainContent = document.getElementById('main-app-content');
+                
+                if (sidebar && mainContent && sidebar.children.length > 0) {
+                    checks.mainContentRendered = true;
+                    updateProgress(95);
+                    checkAllReady();
+                    return true;
+                }
+                return false;
+            }
+            
+            // Polling function to check conditions periodically
+            let checkInterval = setInterval(function() {
+                if (!checks.tailwindApplied) checkTailwind();
+                if (!checks.firebaseLoaded) checkFirebase();
+                if (!checks.lucideLoaded) checkLucide();
+                if (!checks.mainContentRendered) checkMainContent();
+                
+                // Stop polling if all checks done
+                let allDone = Object.values(checks).every(v => v);
+                if (allDone) {
+                    clearInterval(checkInterval);
+                }
+            }, 100); // Check every 100ms
+            
+            // Fallback: Force show after 8 seconds (longer timeout for safety)
+            setTimeout(function() {
+                const loader = document.getElementById('app-loader');
+                if (loader && !loader.classList.contains('loaded')) {
+                    console.warn('⚠️ Loading timeout - Forcing show content');
+                    console.log('Checks status:', checks);
+                    
+                    // Force all checks to true
+                    Object.keys(checks).forEach(key => checks[key] = true);
+                    showContent();
+                    clearInterval(checkInterval);
+                }
+            }, 8000);
+        })();
+
+
+window.addEventListener('load', () => {
         const GOOGLE_API_KEY = "";
 
 
